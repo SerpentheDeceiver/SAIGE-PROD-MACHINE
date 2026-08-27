@@ -1,0 +1,10 @@
+
+# =============================================================================
+# Embedding Configuration for SAIGE Vector Database (ProdMachine)
+# =============================================================================
+
+embedding:
+  model_name: "BAAI/bge-m3"
+  dimension: 1024
+  normalize_embeddings: true
+  batch_size: 8

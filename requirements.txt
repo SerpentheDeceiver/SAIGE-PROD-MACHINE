@@ -1,0 +1,44 @@
+
+tqdm
+requests
+numpy
+sentence-transformers
+torch
+faiss-cpu
+pymupdf
+pdfplumber
+scikit-learn
+openai
+
+# ─── Core ML / Vector DB ───────────────────────────────
+faiss-cpu>=1.7.4          # Facebook FAISS vector index
+sentence-transformers>=2.6.1  # Embedding model
+numpy>=1.24.0
+PyYAML>=6.0               # Config file parsing
+torch>=2.0.0
+transformers>=4.38.0
+sentencepiece>=0.1.99
+
+# ─── PDF Processing ────────────────────────────────────
+PyMuPDF>=1.23.0           # PDF text extraction (import as fitz)
+
+# ─── Testing ───────────────────────────────────────────
+pytest>=8.0.0
+
+# ─── IMPORTANT: Ollama (LLM for title cleanup) ─────────
+# Ollama is NOT a pip package. It is a separate server application.
+#
+# Installation on Windows:
+#   1. Download from https://ollama.com/download
+#   2. Install and run: ollama serve
+#   3. Pull the required model: ollama pull llama3.1:8b
+#
+# The pipeline/institutional/llm_cleanup_titles.py and
+# pipeline/syllabus/llm_cleanup_titles.py scripts require
+# Ollama to be running locally before you execute them.
+# If Ollama is not available, skip the llm_cleanup step —
+# the pipeline will still work using raw extracted titles.
+#
+# Python client (used internally by the scripts):
+ollama>=0.1.0
+

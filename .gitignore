@@ -1,0 +1,54 @@
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual env
+.venv/
+venv/
+
+# OS / IDE
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+ProdMachineRetrievalTestLog.txt
+
+# Secrets
+.env
+
+# Generated outputs (rebuildable)
+data/vector_db/
+akos/**/backups/
+akos/**/institutional_backup_*.json
+akos/**/administrative*_baseline(1).json
+akos/**/administrative(1).json
+=======
+# Generated data — do not commit
+akos/
+data/vector_db/
+data/raw/
+data/reports/
+data/reports/reports/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
