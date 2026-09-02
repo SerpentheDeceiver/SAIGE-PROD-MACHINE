@@ -1,44 +1,51 @@
+# =============================================================================
+# SAIGE ProdMachine — Full environment requirements
+# =============================================================================
+#
+# This file covers the complete Native V1 pipeline plus the common benchmark
+# layer (BGE-M3, FAISS, BM25, evaluation).
+#
+# For production/PowerEdge use the per-group files in requirements/ instead:
+#   pip install -r requirements/core.txt     # ML + FAISS + BM25 (always)
+#   pip install -r requirements/native.txt   # + PyMuPDF + pdfplumber
+#   pip install -r requirements/docling.txt  # + docling (Docling pipeline)
+#   pip install -r requirements/vision.txt   # + paddleocr (Vision pipeline)
+#   pip install -r requirements/benchmark.txt # + pytest + scikit-learn
+#
+# Ollama is NOT a pip package. It is a separate server application.
+#   Install:  https://ollama.com/download
+#   Run:      ollama serve
+#   Model:    ollama pull llama3.1:8b
+# The LLM rewrite stages (syllabus + institutional) require Ollama.
+# Use --skip-llm with scripts/native.py to bypass Ollama.
+# =============================================================================
 
-tqdm
-requests
-numpy
-sentence-transformers
-torch
-faiss-cpu
-pymupdf
-pdfplumber
-scikit-learn
-openai
-
-# ─── Core ML / Vector DB ───────────────────────────────
-faiss-cpu>=1.7.4          # Facebook FAISS vector index
-sentence-transformers>=2.6.1  # Embedding model
-numpy>=1.24.0
-PyYAML>=6.0               # Config file parsing
+# ── ML core ──────────────────────────────────────────────────────────────────
 torch>=2.0.0
 transformers>=4.38.0
+sentence-transformers>=2.6.1
 sentencepiece>=0.1.99
 
-# ─── PDF Processing ────────────────────────────────────
-PyMuPDF>=1.23.0           # PDF text extraction (import as fitz)
+# ── Vector indexing ───────────────────────────────────────────────────────────
+faiss-cpu>=1.7.4
 
-# ─── Testing ───────────────────────────────────────────
+# ── Sparse retrieval ──────────────────────────────────────────────────────────
+rank-bm25>=0.2.2
+
+# ── PDF extraction (Native V1) ────────────────────────────────────────────────
+PyMuPDF>=1.23.0          # syllabus + administrative extractors
+pdfplumber>=0.10.0       # institutional extractor
+
+# ── Config / serialization ────────────────────────────────────────────────────
+PyYAML>=6.0
+numpy>=1.24.0
+
+# ── HTTP (Ollama client used by llm_cleanup_titles.py) ────────────────────────
+requests>=2.28.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+tqdm>=4.64.0
+
+# ── Testing ───────────────────────────────────────────────────────────────────
 pytest>=8.0.0
-
-# ─── IMPORTANT: Ollama (LLM for title cleanup) ─────────
-# Ollama is NOT a pip package. It is a separate server application.
-#
-# Installation on Windows:
-#   1. Download from https://ollama.com/download
-#   2. Install and run: ollama serve
-#   3. Pull the required model: ollama pull llama3.1:8b
-#
-# The pipeline/institutional/llm_cleanup_titles.py and
-# pipeline/syllabus/llm_cleanup_titles.py scripts require
-# Ollama to be running locally before you execute them.
-# If Ollama is not available, skip the llm_cleanup step —
-# the pipeline will still work using raw extracted titles.
-#
-# Python client (used internally by the scripts):
-ollama>=0.1.0
-
+scikit-learn>=1.2.0

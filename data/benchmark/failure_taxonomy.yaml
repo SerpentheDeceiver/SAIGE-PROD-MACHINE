@@ -1,0 +1,101 @@
+# =============================================================================
+# Benchmark Failure Taxonomy
+# =============================================================================
+# When a retrieval result is wrong or a KnowledgeUnit is defective, assign
+# one of these failure codes. Codes are recorded in manual_review.jsonl and
+# in benchmark result reports.
+#
+# Usage: for each failed question, identify the ROOT cause — the earliest
+# stage in the pipeline where the failure originated.
+# =============================================================================
+
+failure_codes:
+
+  # Extraction-stage failures (originate in the PDF → KnowledgeUnit step)
+
+  EXTRACTION_ERROR:
+    stage: extraction
+    description: >
+      The extractor crashed, timed out, or raised an unhandled exception
+      on the source PDF. No KnowledgeUnit was produced for the relevant page.
+
+  TABLE_LOSS:
+    stage: extraction
+    description: >
+      A table present in the source PDF was not captured as a KnowledgeUnit.
+      The table is entirely absent from the pipeline's output.
+
+  ROW_COLUMN_LOSS:
+    stage: extraction
+    description: >
+      A table was captured but row/column structure was lost or merged
+      incorrectly (e.g. multi-column content flattened into a single string).
+
+  READING_ORDER_ERROR:
+    stage: extraction
+    description: >
+      Text was extracted but in wrong reading order (e.g. multi-column layout
+      read left-to-right across column boundaries instead of top-to-bottom
+      within each column).
+
+  SECTION_LOSS:
+    stage: extraction
+    description: >
+      A section present in the source PDF produced no KnowledgeUnit.
+      Section heading detected but body text was not captured.
+
+  CLAUSE_LOSS:
+    stage: extraction
+    description: >
+      A numbered regulation clause present in the source PDF was not captured
+      or was merged with a different clause, losing its identity.
+
+  METADATA_LOSS:
+    stage: extraction
+    description: >
+      The KnowledgeUnit was produced but one or more expected metadata fields
+      (course_code, section_number, page_number, etc.) are null when the
+      source document clearly contains that information.
+
+  # Indexing / retrieval stage failures
+
+  WRONG_DOCUMENT:
+    stage: retrieval
+    description: >
+      The top-K results point to a different source PDF than the gold label.
+
+  WRONG_PAGE:
+    stage: retrieval
+    description: >
+      The correct source file was retrieved but the page/page_range does not
+      match the gold label.
+
+  WRONG_KNOWLEDGE_UNIT:
+    stage: retrieval
+    description: >
+      A KnowledgeUnit from the correct page was produced, but the ranking
+      placed an incorrect unit above the correct one within that page.
+
+  EMBEDDING_FAILURE:
+    stage: retrieval
+    description: >
+      The embedding model produced a degenerate (zero, nan, or uniform)
+      vector for a query or document, causing incorrect similarity scores.
+
+  BM25_FAILURE:
+    stage: retrieval
+    description: >
+      BM25 retrieval returned incorrect results due to vocabulary mismatch,
+      tokenization error, or index corruption.
+
+  RERANKING_FAILURE:
+    stage: retrieval
+    description: >
+      A reranker (if used) re-ordered an initially correct result to a lower
+      rank, introducing a regression relative to the pre-rerank ranking.
+
+  OTHER:
+    stage: unknown
+    description: >
+      Failure does not fit any of the above codes. Add a free-text note in
+      the manual_review.jsonl entry.

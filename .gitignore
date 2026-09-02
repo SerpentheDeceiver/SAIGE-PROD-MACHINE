@@ -1,12 +1,11 @@
-
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
 # Virtual env
 .venv/
@@ -14,6 +13,7 @@ venv/
 
 # OS / IDE
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
@@ -24,31 +24,53 @@ ProdMachineRetrievalTestLog.txt
 # Secrets
 .env
 
-# Generated outputs (rebuildable)
-data/vector_db/
-akos/**/backups/
-akos/**/institutional_backup_*.json
-akos/**/administrative*_baseline(1).json
-akos/**/administrative(1).json
-=======
-# Generated data — do not commit
+# Generated outputs — do not commit (rebuildable on PowerEdge)
 akos/
 data/vector_db/
-data/raw/
 data/reports/
-data/reports/reports/
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
+# Benchmark data — do not commit generated artifacts
+# (schema/example files ARE committed; actual built indexes are not)
+data/processed/native/embeddings/
+data/processed/native/index/
+data/processed/native/extracted/
+data/processed/native/knowledge/
+data/processed/native/metadata/
+data/processed/docling/embeddings/
+data/processed/docling/index/
+data/processed/docling/extracted/
+data/processed/docling/knowledge/
+data/processed/docling/metadata/
+data/processed/vision/embeddings/
+data/processed/vision/index/
+data/processed/vision/extracted/
+data/processed/vision/knowledge/
+data/processed/vision/metadata/
 
-# IDE
-.vscode/
-.idea/
+# Benchmark run results (generated on PowerEdge)
+data/benchmark/results/
 
-# OS
-.DS_Store
-Thumbs.db
+# Keep manifest stubs and .gitkeep files
+!data/processed/**/.gitkeep
+!data/processed/**/manifest.json.example
 
+# Model caches — never commit weights
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.h5
+
+# HuggingFace / Paddle caches
+.cache/
+hub/
+models--*/
+
+# Docling local artifact cache
+.docling/
+
+# Backup / scratch
+akos/**/backups/
+akos/**/*_baseline*.json
+akos/**/*_backup_*.json

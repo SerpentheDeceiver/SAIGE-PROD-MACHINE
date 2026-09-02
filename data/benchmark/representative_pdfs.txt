@@ -1,0 +1,29 @@
+# Representative PDF set for the initial extraction benchmark.
+# One relative path per line (relative to PROD_ROOT).
+# Lines starting with # are comments. Blank lines are ignored.
+#
+# DO NOT run the full 42-PDF corpus through all three pipelines simultaneously.
+# Authorize each pipeline run explicitly via the harness:
+#
+#   python scripts/common/run_representative_extraction.py --pipeline native
+#   python scripts/common/run_representative_extraction.py --pipeline docling
+#   python scripts/common/run_representative_extraction.py --pipeline vision
+#
+# Add/remove PDFs here to change the set. The harness validates existence
+# before running.
+
+# ── Administrative (regulation-heavy, section/clause structure) ──────────────
+data/raw/administrative/BTech_Regulations_2021.pdf
+data/raw/administrative/PhD_Regulations_2021.pdf
+
+# ── Academics (curriculum, tables, course codes, credits) ────────────────────
+data/raw/academics/ug_btech_common_first_year.pdf
+data/raw/academics/ug_btech_cse.pdf
+data/raw/academics/pg_mtech_cse_datascience.pdf
+
+# ── Institutional (services, tables, contacts, URLs) ─────────────────────────
+data/raw/institutional/campus_facilities.pdf
+data/raw/institutional/fees_scholarships.pdf
+data/raw/institutional/faculty_staff.pdf
+data/raw/institutional/tech_portals.pdf
+data/raw/institutional/admission_enrollment.pdf

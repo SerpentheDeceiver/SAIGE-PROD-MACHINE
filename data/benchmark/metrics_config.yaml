@@ -1,0 +1,82 @@
+# =============================================================================
+# Benchmark Metrics Configuration
+# =============================================================================
+# This file governs which metrics are computed and what thresholds trigger
+# a WARNING vs PASS verdict in benchmark evaluation reports.
+# All three pipelines (native / docling / vision) use the same config so
+# results are comparable.
+# =============================================================================
+
+retrieval_metrics:
+  # Recall@K: 1 if any gold ID appears in top-K results, else 0.
+  # Averaged over all questions in the benchmark set.
+  recall_at_1: true
+  recall_at_3: true
+  recall_at_5: true
+  recall_at_10: true
+
+  # MRR: Mean Reciprocal Rank — 1/rank_of_first_correct_result.
+  mrr: true
+
+  # Minimum acceptable thresholds (below → WARN in report)
+  thresholds:
+    recall_at_1_warn: 0.40
+    recall_at_3_warn: 0.60
+    recall_at_5_warn: 0.70
+    recall_at_10_warn: 0.80
+    mrr_warn: 0.50
+
+metadata_correctness:
+  # Each field is checked only when the gold label provides a non-null value.
+  # Result: true / false / null (null = gold field was empty, skip).
+  source_file: true
+  page_number: true
+  section_title: true
+  clause: true
+  course_code: true
+  course_name: true
+  table_id: true
+  row_index: true
+
+extraction_quality:
+  # These dimensions are recorded per pipeline run but not used to disqualify
+  # a pipeline — they inform which pipeline to prefer for which content type.
+  character_count: true
+  knowledge_unit_count: true
+  table_count: true         # units where content_type contains "table"
+  section_count: true       # units where content_type contains "section"
+  empty_page_count: true    # pages that yielded zero KnowledgeUnits
+  metadata_completeness: true  # fraction of KU fields that are non-null
+  page_provenance_coverage: true  # fraction of PDF pages represented in KUs
+
+categories:
+  # Questions are grouped by category for per-category metric reporting.
+  - regulation
+  - clause_lookup
+  - attendance
+  - eligibility
+  - exception
+  - programme_rules
+  - curriculum
+  - course_code
+  - course_credits
+  - semester
+  - table_retrieval
+  - fee
+  - scholarship
+  - facilities
+  - faculty
+  - placement
+  - research
+  - portal
+  - admission
+  - exact_phrase
+  - semantic_paraphrase
+  - metadata_heavy
+  - cross_context
+
+output:
+  # Where benchmark run reports are written (relative to PROD_ROOT).
+  report_dir: data/benchmark/results
+  include_per_question_detail: true
+  include_failure_taxonomy: true
