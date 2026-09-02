@@ -10,4 +10,4 @@ embedding:
   normalize_embeddings: true
   batch_size: 8
   device: "auto"
-  offline: true
+  offline: false

@@ -249,7 +249,7 @@ class TestEmbeddingConfig:
         assert cfg.model_name == "BAAI/bge-m3"
         assert cfg.dimension == 1024
         assert cfg.normalize is True
-        assert cfg.offline is True
+        assert cfg.offline is False   # online mode: downloads from HuggingFace Hub
 
     def test_offline_no_path_raises(self):
         from pipeline.common.embedding_config import EmbeddingConfig
