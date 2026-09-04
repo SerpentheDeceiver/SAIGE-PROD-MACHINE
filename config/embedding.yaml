@@ -9,5 +9,5 @@ embedding:
   normalize: true
   normalize_embeddings: true
   batch_size: 8
-  device: "auto"
+  device: "cpu"
   offline: false
