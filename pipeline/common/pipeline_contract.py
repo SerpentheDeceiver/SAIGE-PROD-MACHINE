@@ -1,4 +1,4 @@
-"""Interfaces and paths for the three benchmark extraction pipelines."""
+"""Interfaces and release paths for the Docling production pipeline."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pipeline.common.knowledge_unit import KnowledgeUnit
 
 
 PROD_ROOT = Path(__file__).resolve().parents[2]
-PIPELINE_NAMES = ("native", "docling", "vision")
+PIPELINE_NAMES = ("docling",)
 
 
 @dataclass(frozen=True)
@@ -22,20 +22,28 @@ class PipelineArtifactPaths:
     embeddings: Path
     index: Path
     manifest: Path
+    build_id: str | None = None
 
 
-def artifact_paths(pipeline: str) -> PipelineArtifactPaths:
+def artifact_paths(pipeline: str = "docling", build_id: str | None = None) -> PipelineArtifactPaths:
     if pipeline not in PIPELINE_NAMES:
         raise ValueError(f"Unknown pipeline: {pipeline}")
-    root = PROD_ROOT / "data" / "processed" / pipeline
+    vector_root = PROD_ROOT / "data" / "vector_db"
+    if build_id:
+        root = vector_root / ".build" / build_id
+        index_root = root
+    else:
+        root = PROD_ROOT / "data" / "processed" / pipeline
+        index_root = vector_root / "current"
     return PipelineArtifactPaths(
         root=root,
         extracted=root / "extracted",
         knowledge=root / "knowledge",
         metadata=root / "metadata",
         embeddings=root / "embeddings",
-        index=root / "index",
+        index=index_root,
         manifest=root / "manifest.json",
+        build_id=build_id,
     )
 
 
@@ -43,7 +51,13 @@ class ExtractionAdapter(ABC):
     pipeline: str
 
     @abstractmethod
-    def extract(self, pdf_paths: list[Path]) -> list[KnowledgeUnit]:
+    def extract(
+        self,
+        pdf_paths: list[Path],
+        *,
+        raw_root: Path | None = None,
+        extraction_errors: dict[str, list[str]] | None = None,
+    ) -> list[KnowledgeUnit]:
         raise NotImplementedError
 
 
@@ -55,6 +69,5 @@ def prepare_artifact_directories() -> None:
             paths.knowledge,
             paths.metadata,
             paths.embeddings,
-            paths.index,
         ]:
             directory.mkdir(parents=True, exist_ok=True)

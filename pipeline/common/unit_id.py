@@ -1,16 +1,8 @@
-"""
-Deterministic KnowledgeUnit ID generation.
+"""Deterministic KnowledgeUnit identity generation.
 
-All three pipelines must produce stable, reproducible unit IDs so that
-benchmark runs on the same PDF are directly comparable and gold labels
-can reference unit IDs that don't change between runs.
-
-ID format:  <pipeline>-<sha256_8>
-where sha256_8 is the first 8 hex characters of
-SHA-256(pipeline + ":" + source_file + ":" + content_type + ":" + text[:400])
-
-The text prefix cap of 400 characters means IDs are stable even if
-surrounding metadata changes, while still being unique within a pipeline run.
+Document content, page provenance, content type, and a stable position in the
+Docling reading order form the identity.  Build IDs, timestamps, file mtimes,
+and extraction metadata are intentionally absent.
 """
 
 from __future__ import annotations
@@ -19,27 +11,45 @@ import hashlib
 
 
 def make_unit_id(
-    pipeline: str,
-    source_file: str,
-    content_type: str,
-    text: str,
+    document_sha256: str,
+    page_number: int | str | None = None,
+    content_type: str | None = None,
+    stable_position: str | int | None = None,
+    text: str | None = None,
+    *,
+    pipeline: str = "docling",
+    source_file: str | None = None,
     extra: str = "",
 ) -> str:
-    """
-    Return a deterministic, collision-resistant unit ID.
+    """Return a stable ID, with compatibility for the pre-Phase-5 signature.
 
-    Args:
-        pipeline:     "native", "docling", or "vision"
-        source_file:  PDF filename (basename only, no path)
-        content_type: e.g. "regulation_clause", "course", "table_row"
-        text:         The unit's text content (first 400 chars used for hashing)
-        extra:        Optional disambiguation string (e.g. page number, row index)
-                      for content types where the same short text can appear on
-                      multiple pages.
-
-    Returns:
-        A string like "native-3f8a1b2c"
+    New callers pass ``document_sha256, page_number, content_type,
+    stable_position, text``.  The old ``pipeline, source_file, content_type,
+    text`` positional form is accepted so archived fixtures can still be read,
+    but active extraction always uses the document hash form.
     """
-    raw = f"{pipeline}:{source_file}:{content_type}:{extra}:{text[:400]}"
-    digest = hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()[:12]
-    return f"{pipeline}-{digest}"
+    # Legacy compatibility: make_unit_id("docling", "file.pdf", "section", "text")
+    if text is None and source_file is None and isinstance(page_number, str):
+        source_file = page_number
+        text = str(stable_position or "")
+        stable_position = extra
+        extra = ""
+        pipeline = document_sha256
+        document_sha256 = hashlib.sha256(source_file.encode("utf-8")).hexdigest()
+        page_number = None
+    if content_type is None or text is None:
+        raise TypeError("document_sha256, content_type, stable_position, and text are required")
+    if not document_sha256:
+        raise ValueError("document_sha256 is required")
+    canonical_text = " ".join(text.split())
+    raw = "\x1f".join(
+        (
+            document_sha256.lower(),
+            str(page_number if page_number is not None else 0),
+            content_type,
+            str(stable_position if stable_position is not None else ""),
+            canonical_text,
+        )
+    )
+    digest = hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()[:20]
+    return f"ku-{digest}"

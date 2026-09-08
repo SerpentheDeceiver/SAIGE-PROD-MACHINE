@@ -1,2 +1,0 @@
-scp master@100.106.217.30:~/COLLEGE/WORK/ChatBot/Saige-ChatBot/data/logs/saige.log D:\WORKSPACE\SAIGE\ServerMachine\SAIGE-CHATBOT\data\logs\ - receive
-scp -r D:/WORKSPACE/SAIGE/ProdMachine/data/vector_db master@100.106.217.30:~/COLLEGE/WORK/ChatBot/Saige-ChatBot/data/ - send

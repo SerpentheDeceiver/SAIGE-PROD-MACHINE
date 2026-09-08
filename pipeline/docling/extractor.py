@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import re
+import hashlib
 from pathlib import Path
 
 from pipeline.common.knowledge_unit import KnowledgeUnit, TableMetadata
@@ -34,10 +35,18 @@ logger = logging.getLogger(__name__)
 
 PIPELINE = "docling"
 
+
+def _file_sha256(pdf_path: Path) -> str:
+    digest = hashlib.sha256()
+    with pdf_path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
 # Docling version captured at import time (populated in _require_docling)
 _DOCLING_VERSION: str | None = None
 
-# Source-category lookup (same logic as native)
+# Source-category lookup by raw-corpus domain
 _CATEGORY_MAP = {
     "academics":      "academics",
     "academic":       "academics",
@@ -60,7 +69,7 @@ def _require_docling() -> None:
     except ImportError as exc:
         raise DependencyMissing(
             "DEPENDENCY MISSING: 'docling' is not installed.\n"
-            "Install it with:  pip install -r requirements/docling.txt\n"
+            "Install Docling in the environment described by README.md.\n"
             "Then stage Docling model artifacts before offline runs:\n"
             "  python -c \"from docling.document_converter import DocumentConverter; DocumentConverter()\"\n"
             f"Original error: {exc}"
@@ -72,7 +81,13 @@ def _infer_category(pdf_path: Path) -> str:
     return _CATEGORY_MAP.get(parent, "institutional")
 
 
-def _extract_text_blocks(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
+def _extract_text_blocks(
+    doc_result: object,
+    pdf_path: Path,
+    *,
+    source_file: str | None = None,
+    document_sha256: str | None = None,
+) -> list[KnowledgeUnit]:
     """
     Extract text-based KnowledgeUnits from a Docling DoclingDocument.
 
@@ -81,7 +96,8 @@ def _extract_text_blocks(doc_result: object, pdf_path: Path) -> list[KnowledgeUn
     detected above them.
     """
     units: list[KnowledgeUnit] = []
-    source_file = pdf_path.name
+    source_file = source_file or pdf_path.name
+    document_sha256 = document_sha256 or _file_sha256(pdf_path)
     category = _infer_category(pdf_path)
 
     try:
@@ -92,19 +108,17 @@ def _extract_text_blocks(doc_result: object, pdf_path: Path) -> list[KnowledgeUn
     current_section: str | None = None
     buffer_texts: list[str] = []
     buffer_page: int | None = None
+    stable_position = 0
 
     def _flush_buffer() -> None:
-        nonlocal buffer_texts, buffer_page
+        nonlocal buffer_texts, buffer_page, stable_position
         if not buffer_texts:
             return
         text = "\n".join(buffer_texts).strip()
         if not text:
             buffer_texts = []
             return
-        uid = make_unit_id(
-            PIPELINE, source_file, "section",
-            text, extra=f"{current_section or ''}:{buffer_page or 0}"
-        )
+        uid = make_unit_id(document_sha256, buffer_page, "section", stable_position, text)
         ku = KnowledgeUnit(
             unit_id         = uid,
             pipeline        = PIPELINE,
@@ -116,10 +130,13 @@ def _extract_text_blocks(doc_result: object, pdf_path: Path) -> list[KnowledgeUn
             page_number     = buffer_page,
             extraction_backend         = "docling",
             extraction_backend_version = _DOCLING_VERSION,
+            document_sha256            = document_sha256,
+            stable_position             = str(stable_position),
         )
         try:
             ku.validate()
             units.append(ku)
+            stable_position += 1
         except ValueError as exc:
             logger.debug("Skipping invalid docling KU: %s", exc)
         buffer_texts = []
@@ -150,7 +167,13 @@ def _extract_text_blocks(doc_result: object, pdf_path: Path) -> list[KnowledgeUn
     return units
 
 
-def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
+def _extract_tables(
+    doc_result: object,
+    pdf_path: Path,
+    *,
+    source_file: str | None = None,
+    document_sha256: str | None = None,
+) -> list[KnowledgeUnit]:
     """
     Extract table KnowledgeUnits from a Docling DoclingDocument.
 
@@ -159,7 +182,8 @@ def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
     A whole-table summary KU is also produced so table-level queries work.
     """
     units: list[KnowledgeUnit] = []
-    source_file = pdf_path.name
+    source_file = source_file or pdf_path.name
+    document_sha256 = document_sha256 or _file_sha256(pdf_path)
     category = _infer_category(pdf_path)
 
     try:
@@ -193,10 +217,8 @@ def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
                 row_index     = None,
                 columns       = columns,
             )
-            uid = make_unit_id(
-                PIPELINE, source_file, "table",
-                all_text, extra=table_id
-            )
+            stable_position = f"table-{t_idx}"
+            uid = make_unit_id(document_sha256, page_no, "table", stable_position, all_text)
             ku = KnowledgeUnit(
                 unit_id         = uid,
                 pipeline        = PIPELINE,
@@ -208,6 +230,8 @@ def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
                 table           = summary_meta,
                 extraction_backend         = "docling",
                 extraction_backend_version = _DOCLING_VERSION,
+                document_sha256            = document_sha256,
+                stable_position             = stable_position,
             )
             try:
                 ku.validate()
@@ -232,10 +256,8 @@ def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
                 columns       = columns,
                 cells         = cells,
             )
-            uid = make_unit_id(
-                PIPELINE, source_file, "table_row",
-                row_text, extra=f"{table_id}-r{r_idx}"
-            )
+            stable_position = f"table-{t_idx}-row-{r_idx}"
+            uid = make_unit_id(document_sha256, page_no, "table_row", stable_position, row_text)
             ku = KnowledgeUnit(
                 unit_id         = uid,
                 pipeline        = PIPELINE,
@@ -247,6 +269,8 @@ def _extract_tables(doc_result: object, pdf_path: Path) -> list[KnowledgeUnit]:
                 table           = row_meta,
                 extraction_backend         = "docling",
                 extraction_backend_version = _DOCLING_VERSION,
+                document_sha256            = document_sha256,
+                stable_position             = stable_position,
             )
             try:
                 ku.validate()
@@ -409,6 +433,8 @@ def extract_docling(
     pdf_paths: list[Path],
     *,
     strict: bool = True,
+    raw_root: Path | None = None,
+    extraction_errors: dict[str, list[str]] | None = None,
 ) -> list[KnowledgeUnit]:
     """
     Run the Docling extraction pipeline on a list of PDFs.
@@ -458,8 +484,19 @@ def extract_docling(
         logger.info("Docling: processing %s", pdf_path.name)
         try:
             result = converter.convert(str(pdf_path))
-            text_units  = _extract_text_blocks(result, pdf_path)
-            table_units = _extract_tables(result, pdf_path)
+            document_sha256 = _file_sha256(pdf_path)
+            source_file = pdf_path.name
+            if raw_root is not None:
+                try:
+                    source_file = pdf_path.resolve().relative_to(raw_root.resolve()).as_posix()
+                except ValueError:
+                    pass
+            text_units  = _extract_text_blocks(
+                result, pdf_path, source_file=source_file, document_sha256=document_sha256
+            )
+            table_units = _extract_tables(
+                result, pdf_path, source_file=source_file, document_sha256=document_sha256
+            )
             file_units  = text_units + table_units
             logger.info(
                 "Docling: %s → %d text units, %d table units",
@@ -468,6 +505,14 @@ def extract_docling(
             all_units.extend(file_units)
         except Exception as exc:
             logger.error("Docling extraction failed for %s: %s", pdf_path.name, exc, exc_info=True)
+            if extraction_errors is not None:
+                key = pdf_path.name
+                if raw_root is not None:
+                    try:
+                        key = pdf_path.resolve().relative_to(raw_root.resolve()).as_posix()
+                    except ValueError:
+                        pass
+                extraction_errors.setdefault(key, []).append(str(exc))
 
     logger.info("Docling extraction complete: %d KnowledgeUnits from %d PDFs.",
                 len(all_units), len(pdf_paths))

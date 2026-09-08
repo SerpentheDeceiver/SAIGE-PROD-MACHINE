@@ -7,8 +7,8 @@ completeness, and page provenance — without relying on character count alone.
 
 Usage example:
     from pipeline.common.extraction_reporter import ExtractionReport, build_report
-    report = build_report(pipeline="native", units=my_units, pdf_page_counts={"file.pdf": 26})
-    report.save(Path("data/processed/native/metadata/extraction_quality.json"))
+    report = build_report(pipeline="docling", units=my_units, pdf_page_counts={"file.pdf": 26})
+    report.save(Path("data/processed/docling/metadata/extraction_quality.json"))
 """
 
 from __future__ import annotations
@@ -107,9 +107,9 @@ def build_report(
     Build an ExtractionReport from a list of KnowledgeUnits.
 
     Args:
-        pipeline: "native", "docling", or "vision".
+        pipeline: "docling".
         units: All KnowledgeUnits produced by this pipeline run.
-        pdf_page_counts: Map of source_file basename → total page count.
+        pdf_page_counts: Map of manifest-relative source path → total page count.
             Used to compute empty-page and page-provenance metrics.
             If None, those metrics are skipped.
         extraction_backend: Backend name string (e.g. "pymupdf", "docling").
@@ -122,14 +122,18 @@ def build_report(
     # Group units by source_file
     by_file: dict[str, list[KnowledgeUnit]] = {}
     for unit in units:
-        fname = Path(unit.source_file).name
+        # Keep the manifest's relative path; basenames are ambiguous across
+        # domains and would make corpus validation/reporting lossy.
+        fname = unit.source_file
         by_file.setdefault(fname, []).append(unit)
 
     per_file_stats: list[SourceFileStats] = []
     all_pages_represented: set[tuple[str, int]] = set()
     all_pages_total: set[tuple[str, int]] = set()
 
-    for fname, file_units in sorted(by_file.items()):
+    all_source_files = set(by_file) | set(pdf_page_counts) | set(extraction_errors)
+    for fname in sorted(all_source_files):
+        file_units = by_file.get(fname, [])
         char_count = sum(len(u.text) for u in file_units)
         table_count = sum(
             1 for u in file_units

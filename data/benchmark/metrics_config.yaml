@@ -3,7 +3,7 @@
 # =============================================================================
 # This file governs which metrics are computed and what thresholds trigger
 # a WARNING vs PASS verdict in benchmark evaluation reports.
-# All three pipelines (native / docling / vision) use the same config so
+# Production retrieval uses the Docling corpus and this shared config so
 # results are comparable.
 # =============================================================================
 

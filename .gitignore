@@ -31,21 +31,10 @@ data/reports/
 
 # Benchmark data — do not commit generated artifacts
 # (schema/example files ARE committed; actual built indexes are not)
-data/processed/native/embeddings/
-data/processed/native/index/
-data/processed/native/extracted/
-data/processed/native/knowledge/
-data/processed/native/metadata/
 data/processed/docling/embeddings/
-data/processed/docling/index/
 data/processed/docling/extracted/
 data/processed/docling/knowledge/
 data/processed/docling/metadata/
-data/processed/vision/embeddings/
-data/processed/vision/index/
-data/processed/vision/extracted/
-data/processed/vision/knowledge/
-data/processed/vision/metadata/
 
 # Benchmark run results (generated on PowerEdge)
 data/benchmark/results/

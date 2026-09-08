@@ -29,7 +29,7 @@ class PipelineManifest:
     status: str
 
     def validate(self) -> None:
-        if self.pipeline not in {"native", "docling", "vision"}:
+        if self.pipeline != "docling":
             raise ValueError(f"Unknown pipeline: {self.pipeline}")
         if self.source_file_count < 0 or self.knowledge_unit_count < 0:
             raise ValueError("Manifest counts must be non-negative")

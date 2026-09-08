@@ -83,6 +83,17 @@ def resolve_device(config: EmbeddingConfig) -> str | None:
     return config.device
 
 
+def describe_device(config: EmbeddingConfig) -> str:
+    """Return the configured and currently available execution device."""
+    if config.device != "auto":
+        return config.device
+    try:
+        import torch
+    except ImportError:
+        return "cpu (torch unavailable)"
+    return "cuda (auto)" if torch.cuda.is_available() else "cpu (auto)"
+
+
 def load_sentence_transformer(config: EmbeddingConfig | None = None):
     cfg = config or load_embedding_config()
     configure_offline_environment(cfg)

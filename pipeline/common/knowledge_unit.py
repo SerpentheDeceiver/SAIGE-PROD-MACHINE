@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-PIPELINES = {"native", "docling", "vision"}
+PIPELINES = {"docling"}
 
 
 @dataclass
@@ -56,6 +56,8 @@ class KnowledgeUnit:
     extraction_backend_version: str | None = None
     extraction_confidence: float | None = None
     raw_output_ref: str | None = None
+    document_sha256: str | None = None
+    stable_position: str | None = None
 
     def validate(self) -> None:
         if not self.unit_id:

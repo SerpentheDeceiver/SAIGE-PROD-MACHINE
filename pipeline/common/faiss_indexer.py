@@ -125,5 +125,5 @@ def build_pipeline_faiss(
             index_type=INDEX_TYPE,
             status="built",
         ),
-        output_dir.parent / "manifest.json",
+        output_dir / "manifest.json",
     )

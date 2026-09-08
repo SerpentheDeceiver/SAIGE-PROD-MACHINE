@@ -1,6 +1,0 @@
-institutional_extraction:
-  similarity_threshold: 0.464
-  semantic_boundary_threshold: 0.633
-  mixed_topic_threshold: 0.527
-  purity_floor: 0.515
-  calibrated_for_current_embedding_model: true
